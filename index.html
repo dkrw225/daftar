@@ -333,20 +333,20 @@
     const SPREADSHEET_ID = '10uE__q7fDR7xaJUdROXOfeFlQdxcYYbMgl0qJ0gFI-Y';
     const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv`;
 
+    // 3. Set untuk menampung ID yang sudah terdaftar
+    let registeredIDs = new Set();
 
-function getFormattedDate() {
-    const d = new Date();
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    const seconds = String(d.getSeconds()).padStart(2, '0');
-    
-    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
-}
-
-
+    function getFormattedDate() {
+        const d = new Date();
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        const seconds = String(d.getSeconds()).padStart(2, '0');
+        
+        return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    }
 
     function toggleAlasanKehadiran() {
         const kehadiranTidak = document.querySelector('input[name="kehadiran"][value="Tidak"]').checked;
@@ -380,41 +380,41 @@ function getFormattedDate() {
         }
     }
 
-    // Parser CSV sederhana
-	// Parser CSV Tangguh (Mendukung Teks yang Mengandung Koma & Tanda Petik)
-	function parseCSV(text) {
-		let p = '', c = '', r = [];
-		let q = false; // flag status quote/tanda petik
-		let row = [''];
-		
-		for (let i = 0; i < text.length; i++) {
-			c = text[i];
-			p = text[i - 1];
-			
-			if (c === '"') {
-				if (q && text[i + 1] === '"') {
-					row[row.length - 1] += '"';
-					i++;
-				} else {
-					q = !q;
-				}
-			} else if (c === ',' && !q) {
-				row.push('');
-			} else if ((c === '\r' || c === '\n') && !q) {
-				if (c === '\r' && text[i + 1] === '\n') {
-					i++;
-				}
-				r.push(row);
-				row = [''];
-			} else {
-				row[row.length - 1] += c;
-			}
-		}
-		if (row.length > 1 || row[0] !== '') {
-			r.push(row);
-		}
-		return r;
-	}
+    // Parser CSV Tangguh
+    function parseCSV(text) {
+        let p = '', c = '', r = [];
+        let q = false;
+        let row = [''];
+        
+        for (let i = 0; i < text.length; i++) {
+            c = text[i];
+            p = text[i - 1];
+            
+            if (c === '"') {
+                if (q && text[i + 1] === '"') {
+                    row[row.length - 1] += '"';
+                    i++;
+                } else {
+                    q = !q;
+                }
+            } else if (c === ',' && !q) {
+                row.push('');
+            } else if ((c === '\r' || c === '\n') && !q) {
+                if (c === '\r' && text[i + 1] === '\n') {
+                    i++;
+                }
+                r.push(row);
+                row = [''];
+            } else {
+                row[row.length - 1] += c;
+            }
+        }
+        if (row.length > 1 || row[0] !== '') {
+            r.push(row);
+        }
+        return r;
+    }
+
     // AMBIL DATA LEWAT SHEET ID PUBLIK (GET)
     async function loadPendaftarData() {
         const tbody = document.getElementById('pendaftarTableBody');
@@ -424,35 +424,31 @@ function getFormattedDate() {
             
             const rows = parseCSV(csvText);
             
+            // Kosongkan Set ID lama
+            registeredIDs.clear();
+
             if (rows.length <= 1) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Belum ada data pendaftar.</td></tr>';
                 return;
             }
 
             const dataRows = rows.slice(1);
+
+            // Simpan semua ID Pendaftar yang ada di kolom indeks 1
+            dataRows.forEach(row => {
+                if (row[1]) {
+                    registeredIDs.add(row[1].trim().toUpperCase());
+                }
+            });
+
             const reversedData = dataRows.reverse();
 
             tbody.innerHTML = '';
             reversedData.forEach(row => {
-                /* Urutan Indeks Kolom CSV Google Sheet:
-                   [0] waktu_input
-                   [1] id_pendaftar
-                   [2] Nama Grup (Dilewati)
-                   [3] usia
-                   [4] kehadiran (Ya/Tidak)
-                   [5] Model Kaos (Dilewati)
-                   [6] kaos
-                   [7] apakah_sakit (Ya/Tidak)
-                   [8] ya_sakit
-                   [9] tidak_ikut
-                   [10] bantu_transportasi
-                */
-
                 const waktuInput = row[0] || '-';
                 const idPendaftar = row[1] || '-';
                 const usia = row[3] || '-';
                 
-                // Pengolahan tampilan Kehadiran
                 const optKehadiran = (row[4] || '').trim();
                 const uraianTidakIkut = (row[9] || '').trim();
                 let displayKehadiran = optKehadiran;
@@ -462,7 +458,6 @@ function getFormattedDate() {
 
                 const kaos = row[6] || '-';
 
-                // Pengolahan tampilan Kesehatan
                 const optSakit = (row[7] || '').trim();
                 const uraianYaSakit = (row[8] || '').trim();
                 let displaySakit = 'Tidak';
@@ -494,6 +489,14 @@ function getFormattedDate() {
     document.getElementById('fitcampForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
+        const inputID = document.getElementById('nama').value.trim().toUpperCase();
+
+        // Cek Duplikasi ID
+        if (registeredIDs.has(inputID)) {
+            alert(`ID "${inputID}" sudah terdaftar! Anda tidak dapat mendaftar kembali.`);
+            return;
+        }
+
         const btn = document.getElementById('btnSubmit');
         btn.disabled = true;
         btn.innerText = 'Mengirim...';
@@ -504,11 +507,10 @@ function getFormattedDate() {
         const valKesehatanOpt = document.querySelector('input[name="kondisi_kesehatan_opt"]:checked').value;
         const valKesehatanUraian = document.getElementById('detail_kesehatan').value.trim();
 
-        // Mengirim JSON ke SheetDB dengan nama kolom ringkas
         const payload = {
             data: {
                 waktu_input: getFormattedDate(),
-                id_pendaftar: document.getElementById('nama').value,
+                id_pendaftar: inputID,
                 usia: document.getElementById('usia').value,
                 kehadiran: valKehadiranOpt,
                 kaos: document.querySelector('input[name="ukuran_kaos"]:checked')?.value || '',
