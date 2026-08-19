@@ -130,7 +130,7 @@
             background-color: #1b5e20;
         }
 
-        /* Styling Tabel Pendaftar */
+        /* Styling Tabel Pendaftar & Rekap Teks */
         .table-section {
             margin-top: 40px;
             border-top: 2px solid #eee;
@@ -139,10 +139,34 @@
         .table-section h2 {
             color: #2e7d32;
             font-size: 20px;
+            margin-bottom: 12px;
+        }
+        .rekap-text-box {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2e7d32;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        /* Search Box Styling */
+        .search-container {
             margin-bottom: 15px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #2e7d32;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: #fff;
         }
         .table-wrapper {
             overflow-x: auto;
+            margin-bottom: 25px;
         }
         table {
             width: 100%;
@@ -154,10 +178,12 @@
             padding: 10px 8px;
             text-align: left;
         }
+        /* Judul Kolom (th) Ditengahkan */
         th {
             background-color: #2e7d32;
             color: white;
             white-space: nowrap;
+            text-align: center;
         }
         tr:nth-child(even) {
             background-color: #f9f9f9;
@@ -299,11 +325,29 @@
         <button type="submit" id="btnSubmit" class="submit-btn">Kirim</button>
     </form>
 
-    <!-- Tabel Data Pendaftar -->
+    <!-- Section Rekap & Tabel Data Pendaftar -->
     <div class="table-section">
+        <!-- Rekap Per Kelas Format Teks -->
+        <h2>Rekap Pendaftar Per Kelas</h2>
+        <div class="rekap-text-box" id="rekapContainer">
+            Memuat rekap...
+        </div>
+
+        <!-- Tabel Detail -->
         <h2>Data Pendaftar (Total: <span id="totalPendaftar">0</span> orang)</h2>
+        
+        <!-- Input Pencarian -->
+        <div class="search-container">
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="search-input" 
+                placeholder="🔍 Cari pendaftar (ID, usia, ukuran kaos, keterangan, dll...)"
+                onkeyup="filterTable()">
+        </div>
+
         <div class="table-wrapper">
-            <table>
+            <table id="pendaftarTable">
                 <thead>
                     <tr>
                         <th>waktu input</th>
@@ -333,7 +377,7 @@
     const SPREADSHEET_ID = '10uE__q7fDR7xaJUdROXOfeFlQdxcYYbMgl0qJ0gFI-Y';
     const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv`;
 
-    // 3. Set untuk menampung ID yang sudah terdaftar
+    // Set untuk menampung ID yang sudah terdaftar
     let registeredIDs = new Set();
 
     function getFormattedDate() {
@@ -415,6 +459,38 @@
         return r;
     }
 
+    // Render Rekap Format Teks Dinamis
+    function renderRekap(counts) {
+        const rekapContainer = document.getElementById('rekapContainer');
+        const detectedClasses = Object.keys(counts).sort();
+
+        if (detectedClasses.length === 0) {
+            rekapContainer.textContent = 'Belum ada data kelas terdaftar.';
+            return;
+        }
+
+        const listRekap = detectedClasses.map(kelas => {
+            return `${kelas} = ${counts[kelas]}`;
+        });
+
+        rekapContainer.textContent = listRekap.join(', ');
+    }
+
+    // Fungsi Filter/Pencarian Real-Time
+    function filterTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#pendaftarTableBody tr');
+
+        rows.forEach(row => {
+            const textContent = row.textContent.toLowerCase();
+            if (textContent.includes(query)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
     // AMBIL DATA LEWAT SHEET ID PUBLIK (GET)
     async function loadPendaftarData() {
         const tbody = document.getElementById('pendaftarTableBody');
@@ -431,25 +507,40 @@
             if (rows.length <= 1) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Belum ada data pendaftar.</td></tr>';
                 if (totalElem) totalElem.textContent = '0';
+                renderRekap({});
                 return;
             }
 
             const dataRows = rows.slice(1);
+            const countsPerKelas = {};
 
-            // Simpan semua ID Pendaftar yang ada di kolom indeks 1
+            // Simpan semua ID Pendaftar Unik & Hitung Per Kelas secara Dinamis
             dataRows.forEach(row => {
                 if (row[1] && row[1].trim() !== '') {
-                    registeredIDs.add(row[1].trim().toUpperCase());
+                    const cleanID = row[1].trim().toUpperCase();
+                    
+                    if (!registeredIDs.has(cleanID)) {
+                        registeredIDs.add(cleanID);
+
+                        // Ekstrak karakter ke-4 s/d 8 (indeks 3 s/d 8) -> 5 karakter
+                        if (cleanID.length >= 8) {
+                            const kodeKelas = cleanID.substring(3, 8);
+                            countsPerKelas[kodeKelas] = (countsPerKelas[kodeKelas] || 0) + 1;
+                        }
+                    }
                 }
             });
 
-            // Tampilkan total unik berdasarkan jumlah ID di Set
+            // Update Total Unik
             if (totalElem) {
                 totalElem.textContent = registeredIDs.size;
             }
 
-            const reversedData = dataRows.reverse();
+            // Render Teks Rekap Dinamis
+            renderRekap(countsPerKelas);
 
+            // Render Tabel Data Pendaftar
+            const reversedData = dataRows.reverse();
             tbody.innerHTML = '';
             reversedData.forEach(row => {
                 const waktuInput = row[0] || '-';
@@ -486,6 +577,10 @@
                 `;
                 tbody.appendChild(tr);
             });
+
+            // Re-apply filter jika ada kata kunci pencarian yang sedang aktif
+            filterTable();
+
         } catch (error) {
             console.error('Gagal memuat data:', error);
             tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Gagal memuat data.</td></tr>';
