@@ -301,7 +301,7 @@
 
     <!-- Tabel Data Pendaftar -->
     <div class="table-section">
-        <h2>Data Pendaftar</h2>
+        <h2>Data Pendaftar (Total: <span id="totalPendaftar">0</span> orang)</h2>
         <div class="table-wrapper">
             <table>
                 <thead>
@@ -418,6 +418,7 @@
     // AMBIL DATA LEWAT SHEET ID PUBLIK (GET)
     async function loadPendaftarData() {
         const tbody = document.getElementById('pendaftarTableBody');
+        const totalElem = document.getElementById('totalPendaftar');
         try {
             const response = await fetch(CSV_URL);
             const csvText = await response.text();
@@ -429,6 +430,7 @@
 
             if (rows.length <= 1) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Belum ada data pendaftar.</td></tr>';
+                if (totalElem) totalElem.textContent = '0';
                 return;
             }
 
@@ -436,10 +438,15 @@
 
             // Simpan semua ID Pendaftar yang ada di kolom indeks 1
             dataRows.forEach(row => {
-                if (row[1]) {
+                if (row[1] && row[1].trim() !== '') {
                     registeredIDs.add(row[1].trim().toUpperCase());
                 }
             });
+
+            // Tampilkan total unik berdasarkan jumlah ID di Set
+            if (totalElem) {
+                totalElem.textContent = registeredIDs.size;
+            }
 
             const reversedData = dataRows.reverse();
 
