@@ -180,6 +180,7 @@
     <div class="required-notice">* Menunjukkan pertanyaan yang wajib diisi</div>
 
     <form id="fitcampForm">
+        
         <!-- Field ID -->
         <div class="form-group">
             <label for="nama">id sektor + id kelas + id anggota, contoh: RW IA401 WAC01 <span class="required">*</span></label>
@@ -206,7 +207,7 @@
             <label>Insya Allah akan hadir dan ikut Fit Camp 2026 tanggal 12-13 September 2026 <span class="required">*</span></label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" name="kehadiran" value="Iya" checked onchange="toggleAlasanKehadiran()"> Iya
+                    <input type="radio" name="kehadiran" value="Ya" checked onchange="toggleAlasanKehadiran()"> Ya
                 </label>
                 <label class="radio-option">
                     <input type="radio" name="kehadiran" value="Tidak" onchange="toggleAlasanKehadiran()"> Tidak
@@ -284,7 +285,7 @@
             <label>Apakah berkenan untuk membantu transportasi, mobilisasi peserta dengan area keberangkatan yang sama? <span class="required">*</span></label>
             <div class="radio-group">
                 <label class="radio-option">
-                    <input type="radio" name="transportasi" value="Iya" required> Iya
+                    <input type="radio" name="transportasi" value="Ya" required> Ya
                 </label>
                 <label class="radio-option">
                     <input type="radio" name="transportasi" value="Berangkat sendiri"> Berangkat sendiri
@@ -325,26 +326,27 @@
 </div>
 
 <script>
-    // masukkan GOOGLE SHEET ID dan SCRIPT URL Anda di sini
-    const SPREADSHEET_ID = 'MASUKKAN_SHEET_ID_ANDA_DI_SINI';
-    
-    // URL Google Apps Script Web App untuk Menerima Pengiriman Form
-    const APPS_SCRIPT_URL = 'MASUKKAN_WEB_APP_URL_APPS_SCRIPT_DI_SINI';
+    // 1. URL SheetDB untuk MENGIRIM Data (POST)
+    const SHEETDB_URL = 'https://sheetdb.io/api/v1/xd1bw3m7by0fp';
 
-    // Mengambil data dari Google Sheets (format CSV publik)
+    // 2. Google Sheet ID Publik untuk MENGAMBIL Data (GET)
+    const SPREADSHEET_ID = '10uE__q7fDR7xaJUdROXOfeFlQdxcYYbMgl0qJ0gFI-Y';
     const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv`;
 
-    function getFormattedDate() {
-        const d = new Date();
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = months[d.getMonth()];
-        const year = d.getFullYear();
-        const hours = String(d.getHours()).padStart(2, '0');
-        const minutes = String(d.getMinutes()).padStart(2, '0');
-        
-        return `${day} ${month} ${year} ${hours}:${minutes}`;
-    }
+
+function getFormattedDate() {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const second = String(d.getSecond()).padStart(2, '0');
+    
+    return `${day}/${month}/${year} ${hours}:${minutes}:${second}`;
+}
+
+
 
     function toggleAlasanKehadiran() {
         const kehadiranTidak = document.querySelector('input[name="kehadiran"][value="Tidak"]').checked;
@@ -378,25 +380,42 @@
         }
     }
 
-    // Fungsi Parser CSV sederhana
-    function parseCSV(text) {
-        const lines = text.split('\n');
-        return lines.map(line => {
-            const regex = /(?:,|\r\n|\n|^)(?:"([^"]*(?:""[^"]*)*)"|([^,\r\n]*))/g;
-            let row = [];
-            let match;
-            while ((match = regex.exec(line)) !== null) {
-                if (match[1] !== undefined) {
-                    row.push(match[1].replace(/""/g, '"'));
-                } else if (match[2] !== undefined) {
-                    row.push(match[2]);
-                }
-            }
-            return row;
-        }).filter(row => row.length > 1);
-    }
-
-    // Fungsi Fetch data dari Sheet ID langsung
+    // Parser CSV sederhana
+	// Parser CSV Tangguh (Mendukung Teks yang Mengandung Koma & Tanda Petik)
+	function parseCSV(text) {
+		let p = '', c = '', r = [];
+		let q = false; // flag status quote/tanda petik
+		let row = [''];
+		
+		for (let i = 0; i < text.length; i++) {
+			c = text[i];
+			p = text[i - 1];
+			
+			if (c === '"') {
+				if (q && text[i + 1] === '"') {
+					row[row.length - 1] += '"';
+					i++;
+				} else {
+					q = !q;
+				}
+			} else if (c === ',' && !q) {
+				row.push('');
+			} else if ((c === '\r' || c === '\n') && !q) {
+				if (c === '\r' && text[i + 1] === '\n') {
+					i++;
+				}
+				r.push(row);
+				row = [''];
+			} else {
+				row[row.length - 1] += c;
+			}
+		}
+		if (row.length > 1 || row[0] !== '') {
+			r.push(row);
+		}
+		return r;
+	}
+    // AMBIL DATA LEWAT SHEET ID PUBLIK (GET)
     async function loadPendaftarData() {
         const tbody = document.getElementById('pendaftarTableBody');
         try {
@@ -405,38 +424,73 @@
             
             const rows = parseCSV(csvText);
             
-            // Mengabaikan baris pertama (Header)
-            const dataRows = rows.slice(1);
-
-            if (dataRows.length === 0) {
+            if (rows.length <= 1) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Belum ada data pendaftar.</td></tr>';
                 return;
             }
 
-            // Membalikkan urutan agar data terbaru berada di paling atas
+            const dataRows = rows.slice(1);
             const reversedData = dataRows.reverse();
 
             tbody.innerHTML = '';
             reversedData.forEach(row => {
+                /* Urutan Indeks Kolom CSV Google Sheet:
+                   [0] waktu_input
+                   [1] id_pendaftar
+                   [2] Nama Grup (Dilewati)
+                   [3] usia
+                   [4] kehadiran (Ya/Tidak)
+                   [5] Model Kaos (Dilewati)
+                   [6] kaos
+                   [7] apakah_sakit (Ya/Tidak)
+                   [8] ya_sakit
+                   [9] tidak_ikut
+                   [10] bantu_transportasi
+                */
+
+                const waktuInput = row[0] || '-';
+                const idPendaftar = row[1] || '-';
+                const usia = row[3] || '-';
+                
+                // Pengolahan tampilan Kehadiran
+                const optKehadiran = (row[4] || '').trim();
+                const uraianTidakIkut = (row[9] || '').trim();
+                let displayKehadiran = optKehadiran;
+                if (optKehadiran.toLowerCase() === 'tidak' && uraianTidakIkut && uraianTidakIkut !== '-') {
+                    displayKehadiran = uraianTidakIkut;
+                }
+
+                const kaos = row[6] || '-';
+
+                // Pengolahan tampilan Kesehatan
+                const optSakit = (row[7] || '').trim();
+                const uraianYaSakit = (row[8] || '').trim();
+                let displaySakit = 'Tidak';
+                if (optSakit.toLowerCase() === 'ya') {
+                    displaySakit = (uraianYaSakit && uraianYaSakit !== '-') ? `Ya - ${uraianYaSakit}` : 'Ya';
+                }
+
+                const bantuTransportasi = row[10] || '-';
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${row[0] || '-'}</td>
-                    <td>${row[1] || '-'}</td>
-                    <td>${row[2] || '-'}</td>
-                    <td>${row[3] || '-'}</td>
-                    <td>${row[4] || '-'}</td>
-                    <td>${row[5] || '-'}</td>
-                    <td>${row[6] || '-'}</td>
+                    <td>${waktuInput}</td>
+                    <td>${idPendaftar}</td>
+                    <td>${usia}</td>
+                    <td>${displayKehadiran}</td>
+                    <td>${kaos}</td>
+                    <td>${displaySakit}</td>
+                    <td>${bantuTransportasi}</td>
                 `;
                 tbody.appendChild(tr);
             });
         } catch (error) {
             console.error('Gagal memuat data:', error);
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Gagal memuat data</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Gagal memuat data.</td></tr>';
         }
     }
 
-    // Kirim data via Apps Script Web App
+    // KIRIM DATA LEWAT SHEETDB (POST)
     document.getElementById('fitcampForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -445,45 +499,48 @@
         btn.innerText = 'Mengirim...';
 
         const valKehadiranOpt = document.querySelector('input[name="kehadiran"]:checked').value;
-        let finalKehadiran = valKehadiranOpt;
-        if (valKehadiranOpt === 'Tidak') {
-            const alasanText = document.getElementById('alasan_kehadiran').value.trim();
-            finalKehadiran = alasanText !== '' ? alasanText : 'Tidak';
-        }
+        const valKehadiranUraian = document.getElementById('alasan_kehadiran').value.trim();
 
         const valKesehatanOpt = document.querySelector('input[name="kondisi_kesehatan_opt"]:checked').value;
-        let finalKesehatan = 'Tidak';
-        if (valKesehatanOpt === 'Ya') {
-            const detailText = document.getElementById('detail_kesehatan').value.trim();
-            finalKesehatan = detailText !== '' ? `Ya - ${detailText}` : 'Ya';
-        }
+        const valKesehatanUraian = document.getElementById('detail_kesehatan').value.trim();
 
-        const formData = new FormData();
-        formData.append('waktu_input', getFormattedDate());
-        formData.append('id_pendaftar', document.getElementById('nama').value);
-        formData.append('usia', document.getElementById('usia').value);
-        formData.append('kehadiran', finalKehadiran);
-        formData.append('kaos', document.querySelector('input[name="ukuran_kaos"]:checked')?.value || '');
-        formData.append('apakah_sakit', finalKesehatan);
-        formData.append('bantu_transportasi', document.querySelector('input[name="transportasi"]:checked')?.value || '');
+        // Mengirim JSON ke SheetDB dengan nama kolom ringkas
+        const payload = {
+            data: {
+                waktu_input: getFormattedDate(),
+                id_pendaftar: document.getElementById('nama').value,
+                usia: document.getElementById('usia').value,
+                kehadiran: valKehadiranOpt,
+                kaos: document.querySelector('input[name="ukuran_kaos"]:checked')?.value || '',
+                apakah_sakit: valKesehatanOpt,
+                ya_sakit: valKesehatanOpt === 'Ya' ? (valKesehatanUraian || '-') : '-',
+                tidak_ikut: valKehadiranOpt === 'Tidak' ? (valKehadiranUraian || '-') : '-',
+                bantu_transportasi: document.querySelector('input[name="transportasi"]:checked')?.value || ''
+            }
+        };
 
         try {
-            await fetch(APPS_SCRIPT_URL, {
+            const res = await fetch(SHEETDB_URL, {
                 method: 'POST',
-                body: formData,
-                mode: 'no-cors'
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
             });
 
-            alert('Data berhasil dikirim!');
-            this.reset();
-            toggleAlasanKehadiran();
-            toggleDetailKesehatan();
-            
-            // Beri jeda 1.5 detik agar Google Sheet memperbarui CSV sebelum di-fetch ulang
-            setTimeout(loadPendaftarData, 1500);
+            if (res.ok) {
+                alert('Data berhasil dikirim!');
+                this.reset();
+                toggleAlasanKehadiran();
+                toggleDetailKesehatan();
+                
+                setTimeout(loadPendaftarData, 1500);
+            } else {
+                alert('Gagal mengirim data. Silakan coba lagi.');
+            }
         } catch (err) {
             console.error(err);
-            alert('Terjadi kesalahan saat mengirim.');
+            alert('Terjadi kesalahan koneksi.');
         } finally {
             btn.disabled = false;
             btn.innerText = 'Kirim';
