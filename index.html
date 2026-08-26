@@ -112,7 +112,7 @@
             display: block;
         }
         .hidden {
-            display: none;
+            display: none !important;
         }
         .submit-btn {
             background-color: #2e7d32;
@@ -178,7 +178,6 @@
             padding: 10px 8px;
             text-align: left;
         }
-        /* Judul Kolom (th) Ditengahkan */
         th {
             background-color: #2e7d32;
             color: white;
@@ -198,8 +197,8 @@
     </div>
 
     <div class="info-box">
-        <strong>Batas waktu pendaftaran maksimal tanggal 22 Agustus 2026</strong><br>
-        📆 12 - 13 September 2026<br>
+        <strong>Batas waktu pendaftaran maksimal diperpanjang, tanya Pak Syams</strong><br>
+        📅 12 - 13 September 2026<br>
         📍 Lingkung Gunung Adventure Camp, Cikereteg. Pancawati.
     </div>
 
@@ -250,75 +249,78 @@
             <textarea id="alasan_kehadiran" name="alasan_kehadiran" rows="3" style="margin-top: 8px;">-</textarea>
         </div>
 
-        <!-- Ukuran Kaos & Gambar -->
-        <div class="form-group">
-            <label>Ukuran Kaos <span class="required">*</span></label>
-            <div class="note" style="color: #d32f2f; font-weight: bold;">*Model kaos hanya lengan panjang</div>
-            
-            <div class="image-container">
-                <div>
-                    <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">Desain Jersey:</label>
-                    <img src="desain.jpg" alt="Desain Jersey" class="preview-img">
+        <!-- Pertanyaan Lanjutan (Akan disembunyikan jika memilih "Tidak") -->
+        <div id="section_pertanyaan_lanjutan">
+            <!-- Ukuran Kaos & Gambar -->
+            <div class="form-group">
+                <label>Ukuran Kaos <span class="required">*</span></label>
+                <div class="note" style="color: #d32f2f; font-weight: bold;">*Model kaos hanya lengan panjang</div>
+                
+                <div class="image-container">
+                    <div>
+                        <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">Desain Jersey:</label>
+                        <img src="desain.jpg" alt="Desain Jersey" class="preview-img">
+                    </div>
+                    <div>
+                        <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">Chart Ukuran:</label>
+                        <img src="ukuran.jpg" alt="Chart Ukuran" class="preview-img">
+                    </div>
                 </div>
-                <div>
-                    <label style="font-size: 13px; color: #555; display: block; margin-bottom: 4px;">Chart Ukuran:</label>
-                    <img src="ukuran.jpg" alt="Chart Ukuran" class="preview-img">
+
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="ukuran_kaos" value="M" class="kaos-option"> M
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="ukuran_kaos" value="L" class="kaos-option"> L
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="ukuran_kaos" value="XL" class="kaos-option"> XL
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="ukuran_kaos" value="XXL" class="kaos-option"> XXL
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="ukuran_kaos" value="XXXL" class="kaos-option"> XXXL
+                    </label>
                 </div>
             </div>
 
-            <div class="radio-group">
-                <label class="radio-option">
-                    <input type="radio" name="ukuran_kaos" value="M" required> M
-                </label>
-                <label class="radio-option">
-                    <input type="radio" name="ukuran_kaos" value="L"> L
-                </label>
-                <label class="radio-option">
-                    <input type="radio" name="ukuran_kaos" value="XL"> XL
-                </label>
-                <label class="radio-option">
-                    <input type="radio" name="ukuran_kaos" value="XXL"> XXL
-                </label>
-                <label class="radio-option">
-                    <input type="radio" name="ukuran_kaos" value="XXXL"> XXXL
-                </label>
+            <!-- Kondisi Kesehatan -->
+            <div class="form-group">
+                <label>Apakah ada kondisi kesehatan yang perlu diperhatikan? <span class="required">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="kondisi_kesehatan_opt" value="Ya" onchange="toggleDetailKesehatan()"> Ya
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="kondisi_kesehatan_opt" value="Tidak" checked onchange="toggleDetailKesehatan()"> Tidak
+                    </label>
+                </div>
             </div>
-        </div>
 
-        <!-- Kondisi Kesehatan -->
-        <div class="form-group">
-            <label>Apakah ada kondisi kesehatan yang perlu diperhatikan? <span class="required">*</span></label>
-            <div class="radio-group">
-                <label class="radio-option">
-                    <input type="radio" name="kondisi_kesehatan_opt" value="Ya" onchange="toggleDetailKesehatan()"> Ya
+            <!-- Field Uraian Kesehatan -->
+            <div class="form-group hidden" id="field_detail_kesehatan">
+                <label for="detail_kesehatan">
+                    Jika "Ya", uraikan kondisi kesehatannya. <span class="required">*</span>
                 </label>
-                <label class="radio-option">
-                    <input type="radio" name="kondisi_kesehatan_opt" value="Tidak" checked onchange="toggleDetailKesehatan()"> Tidak
-                </label>
+                <textarea id="detail_kesehatan" name="detail_kesehatan" rows="3">-</textarea>
             </div>
-        </div>
 
-        <!-- Field Uraian Kesehatan -->
-        <div class="form-group hidden" id="field_detail_kesehatan">
-            <label for="detail_kesehatan">
-                Jika "Ya", uraikan kondisi kesehatannya. <span class="required">*</span>
-            </label>
-            <textarea id="detail_kesehatan" name="detail_kesehatan" rows="3">-</textarea>
-        </div>
-
-        <!-- Transportasi -->
-        <div class="form-group">
-            <label>Apakah berkenan untuk membantu transportasi, mobilisasi peserta dengan area keberangkatan yang sama? <span class="required">*</span></label>
-            <div class="radio-group">
-                <label class="radio-option">
-                    <input type="radio" name="transportasi" value="Ya" required> Ya
-                </label>
-                <label class="radio-option">
-                    <input type="radio" name="transportasi" value="Berangkat sendiri"> Berangkat sendiri
-                </label>
-                <label class="radio-option">
-                    <input type="radio" name="transportasi" value="Ingin menumpang"> Ingin menumpang
-                </label>
+            <!-- Transportasi -->
+            <div class="form-group">
+                <label>Apakah berkenan untuk membantu transportasi, mobilisasi peserta dengan area keberangkatan yang sama? <span class="required">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="transportasi" value="Ya" class="trans-option"> Ya
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="transportasi" value="Berangkat sendiri" class="trans-option"> Berangkat sendiri
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="transportasi" value="Ingin menumpang" class="trans-option"> Ingin menumpang
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -327,16 +329,13 @@
 
     <!-- Section Rekap & Tabel Data Pendaftar -->
     <div class="table-section">
-        <!-- Rekap Per Kelas Format Teks -->
         <h2>Rekap Pendaftar Per Kelas</h2>
         <div class="rekap-text-box" id="rekapContainer">
             Memuat rekap...
         </div>
 
-        <!-- Tabel Detail -->
         <h2>Data Pendaftar (Total: <span id="totalPendaftar">0</span> orang)</h2>
         
-        <!-- Input Pencarian -->
         <div class="search-container">
             <input 
                 type="text" 
@@ -370,14 +369,10 @@
 </div>
 
 <script>
-    // 1. URL SheetDB untuk MENGIRIM Data (POST)
     const SHEETDB_URL = 'https://sheetdb.io/api/v1/xd1bw3m7by0fp';
-
-    // 2. Google Sheet ID Publik untuk MENGAMBIL Data (GET)
     const SPREADSHEET_ID = '10uE__q7fDR7xaJUdROXOfeFlQdxcYYbMgl0qJ0gFI-Y';
     const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv`;
 
-    // Set untuk menampung ID yang sudah terdaftar
     let registeredIDs = new Set();
 
     function getFormattedDate() {
@@ -396,15 +391,35 @@
         const kehadiranTidak = document.querySelector('input[name="kehadiran"][value="Tidak"]').checked;
         const fieldAlasan = document.getElementById('field_alasan_kehadiran');
         const inputAlasan = document.getElementById('alasan_kehadiran');
+        const sectionLanjutan = document.getElementById('section_pertanyaan_lanjutan');
+        
+        const kaosInputs = document.querySelectorAll('.kaos-option');
+        const transInputs = document.querySelectorAll('.trans-option');
 
         if (kehadiranTidak) {
+            // Tampilkan alasan
             fieldAlasan.classList.remove('hidden');
             inputAlasan.required = true;
             if (inputAlasan.value === '-') inputAlasan.value = '';
+
+            // Sembunyikan seluruh pertanyaan berikutnya
+            sectionLanjutan.classList.add('hidden');
+
+            // Lepas atribut required pada pertanyaan lanjutan
+            kaosInputs.forEach(i => i.required = false);
+            transInputs.forEach(i => i.required = false);
         } else {
+            // Sembunyikan alasan
             fieldAlasan.classList.add('hidden');
             inputAlasan.required = false;
             inputAlasan.value = '-';
+
+            // Tampilkan kembali pertanyaan berikutnya
+            sectionLanjutan.classList.remove('hidden');
+
+            // Pasang atribut required kembali
+            if (kaosInputs.length > 0) kaosInputs[0].required = true;
+            if (transInputs.length > 0) transInputs[0].required = true;
         }
     }
 
@@ -424,7 +439,6 @@
         }
     }
 
-    // Parser CSV Tangguh
     function parseCSV(text) {
         let p = '', c = '', r = [];
         let q = false;
@@ -459,7 +473,6 @@
         return r;
     }
 
-    // Render Rekap Format Teks Dinamis
     function renderRekap(counts) {
         const rekapContainer = document.getElementById('rekapContainer');
         const detectedClasses = Object.keys(counts).sort();
@@ -476,7 +489,6 @@
         rekapContainer.textContent = listRekap.join(', ');
     }
 
-    // Fungsi Filter/Pencarian Real-Time
     function filterTable() {
         const query = document.getElementById('searchInput').value.toLowerCase();
         const rows = document.querySelectorAll('#pendaftarTableBody tr');
@@ -491,7 +503,6 @@
         });
     }
 
-    // AMBIL DATA LEWAT SHEET ID PUBLIK (GET)
     async function loadPendaftarData() {
         const tbody = document.getElementById('pendaftarTableBody');
         const totalElem = document.getElementById('totalPendaftar');
@@ -500,8 +511,6 @@
             const csvText = await response.text();
             
             const rows = parseCSV(csvText);
-            
-            // Kosongkan Set ID lama
             registeredIDs.clear();
 
             if (rows.length <= 1) {
@@ -514,7 +523,6 @@
             const dataRows = rows.slice(1);
             const countsPerKelas = {};
 
-            // Simpan semua ID Pendaftar Unik & Hitung Per Kelas secara Dinamis
             dataRows.forEach(row => {
                 if (row[1] && row[1].trim() !== '') {
                     const cleanID = row[1].trim().toUpperCase();
@@ -522,7 +530,6 @@
                     if (!registeredIDs.has(cleanID)) {
                         registeredIDs.add(cleanID);
 
-                        // Ekstrak karakter ke-4 s/d 8 (indeks 3 s/d 8) -> 5 karakter
                         if (cleanID.length >= 8) {
                             const kodeKelas = cleanID.substring(3, 8);
                             countsPerKelas[kodeKelas] = (countsPerKelas[kodeKelas] || 0) + 1;
@@ -531,15 +538,12 @@
                 }
             });
 
-            // Update Total Unik
             if (totalElem) {
                 totalElem.textContent = registeredIDs.size;
             }
 
-            // Render Teks Rekap Dinamis
             renderRekap(countsPerKelas);
 
-            // Render Tabel Data Pendaftar
             const reversedData = dataRows.reverse();
             tbody.innerHTML = '';
             reversedData.forEach(row => {
@@ -550,8 +554,14 @@
                 const optKehadiran = (row[4] || '').trim();
                 const uraianTidakIkut = (row[9] || '').trim();
                 let displayKehadiran = optKehadiran;
-                if (optKehadiran.toLowerCase() === 'tidak' && uraianTidakIkut && uraianTidakIkut !== '-') {
-                    displayKehadiran = uraianTidakIkut;
+                
+                // Tampilkan "Tidak - [Alasan]" pada kolom tabel
+                if (optKehadiran.toLowerCase() === 'tidak') {
+                    if (uraianTidakIkut && uraianTidakIkut !== '-') {
+                        displayKehadiran = `Tidak - ${uraianTidakIkut}`;
+                    } else {
+                        displayKehadiran = 'Tidak';
+                    }
                 }
 
                 const kaos = row[6] || '-';
@@ -578,7 +588,6 @@
                 tbody.appendChild(tr);
             });
 
-            // Re-apply filter jika ada kata kunci pencarian yang sedang aktif
             filterTable();
 
         } catch (error) {
@@ -587,13 +596,11 @@
         }
     }
 
-    // KIRIM DATA LEWAT SHEETDB (POST)
     document.getElementById('fitcampForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const inputID = document.getElementById('nama').value.trim().toUpperCase();
 
-        // Cek Duplikasi ID
         if (registeredIDs.has(inputID)) {
             alert(`ID "${inputID}" sudah terdaftar! Anda tidak dapat mendaftar kembali.`);
             return;
@@ -606,7 +613,7 @@
         const valKehadiranOpt = document.querySelector('input[name="kehadiran"]:checked').value;
         const valKehadiranUraian = document.getElementById('alasan_kehadiran').value.trim();
 
-        const valKesehatanOpt = document.querySelector('input[name="kondisi_kesehatan_opt"]:checked').value;
+        const valKesehatanOpt = document.querySelector('input[name="kondisi_kesehatan_opt"]:checked') ? document.querySelector('input[name="kondisi_kesehatan_opt"]:checked').value : '-';
         const valKesehatanUraian = document.getElementById('detail_kesehatan').value.trim();
 
         const payload = {
@@ -615,11 +622,11 @@
                 id_pendaftar: inputID,
                 usia: document.getElementById('usia').value,
                 kehadiran: valKehadiranOpt,
-                kaos: document.querySelector('input[name="ukuran_kaos"]:checked')?.value || '',
-                apakah_sakit: valKesehatanOpt,
-                ya_sakit: valKesehatanOpt === 'Ya' ? (valKesehatanUraian || '-') : '-',
+                kaos: valKehadiranOpt === 'Tidak' ? '-' : (document.querySelector('input[name="ukuran_kaos"]:checked')?.value || '-'),
+                apakah_sakit: valKehadiranOpt === 'Tidak' ? '-' : valKesehatanOpt,
+                ya_sakit: (valKehadiranOpt !== 'Tidak' && valKesehatanOpt === 'Ya') ? (valKesehatanUraian || '-') : '-',
                 tidak_ikut: valKehadiranOpt === 'Tidak' ? (valKehadiranUraian || '-') : '-',
-                bantu_transportasi: document.querySelector('input[name="transportasi"]:checked')?.value || ''
+                bantu_transportasi: valKehadiranOpt === 'Tidak' ? '-' : (document.querySelector('input[name="transportasi"]:checked')?.value || '-')
             }
         };
 
@@ -651,7 +658,10 @@
         }
     });
 
-    window.addEventListener('DOMContentLoaded', loadPendaftarData);
+    window.addEventListener('DOMContentLoaded', () => {
+        toggleAlasanKehadiran();
+        loadPendaftarData();
+    });
 </script>
 
 </body>
