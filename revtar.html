@@ -68,10 +68,10 @@
 
     <div class="container">
         <div class="card">
-            <label for="pengguna">Pendaftar - ID_Sektor ID_Kelas ID_Anggota</label>
+            <label for="pendaftar">Pendaftar - ID_Sektor ID_Kelas ID_Anggota</label>
             <span class="sub-label">Contoh: RW IA401 WAC01</span>
             
-            <input id="pengguna" type="text" placeholder="Contoh: RW IA401 WAC01" autocomplete="off" list="listPendaftar">
+            <input id="pendaftar" type="text" placeholder="Contoh: RW IA401 WAC01" autocomplete="off" list="listPendaftar">
             <datalist id="listPendaftar"></datalist>
 
             <label>Konfirmasi Kedatangan</label>
@@ -172,9 +172,9 @@
             } catch (e) { return []; }
         }
 
-        function simpanKeMemoryLokal(pengguna) {
+        function simpanKeMemoryLokal(pendaftar) {
             let data = ambilMemoryLokal();
-            const clean = pengguna.trim().toUpperCase();
+            const clean = pendaftar.trim().toUpperCase();
             
             data = data.filter(item => item !== clean);
             data.push(clean);
@@ -189,26 +189,26 @@
             
             datalist.innerHTML = memory.slice().reverse().map(item => `<option value="${item}">`).join("");
 
-            const input = document.getElementById("pengguna");
+            const input = document.getElementById("pendaftar");
             if (memory.length > 0 && !input.value) {
                 input.value = memory[memory.length - 1];
             }
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            const input = document.getElementById("pengguna");
+            const input = document.getElementById("pendaftar");
             input.addEventListener("input", function() { this.value = this.value.toUpperCase(); });
-            input.addEventListener("blur", function() { this.value = bersihkanPengguna(this.value); });
+            input.addEventListener("blur", function() { this.value = bersihkanpendaftar(this.value); });
 
             const inputPasangan = document.getElementById("idPasangan");
             inputPasangan.addEventListener("input", function() { this.value = this.value.toUpperCase(); });
-            inputPasangan.addEventListener("blur", function() { this.value = bersihkanPengguna(this.value); });
+            inputPasangan.addEventListener("blur", function() { this.value = bersihkanpendaftar(this.value); });
             
             updateDatalistOptions();
             loadData();
         });
 
-        function bersihkanPengguna(inputRaw) {
+        function bersihkanpendaftar(inputRaw) {
             let bersih = inputRaw.replace(/\s+/g, "").toUpperCase();
             const match = bersih.match(/^([A-Z]{2})([A-Z]{2}[0-9]{3})([A-Z]{3}[0-9]{2})$/);
             return match ? `${match[1]} ${match[2]} ${match[3]}` : inputRaw.toUpperCase();
@@ -245,12 +245,12 @@
                 semuaData = json.table.rows.map(row => {
                     const cells = row.c || [];
                     return {
-                        pengguna: ambilCell(cells, 0),
+                        pendaftar: ambilCell(cells, 0),
                         konfirmasi: ambilCell(cells, 1),
                         keterangan: ambilCell(cells, 2),
                         waktuInput: ambilWaktu(cells, 3)
                     };
-                }).filter(r => r.pengguna || r.konfirmasi || r.keterangan || r.waktuInput);
+                }).filter(r => r.pendaftar || r.konfirmasi || r.keterangan || r.waktuInput);
 
                 semuaData.reverse();
                 tampilTabel(semuaData);
@@ -281,16 +281,16 @@
             let rekapMap = {}, totalSemua = 0, totalYa = 0, totalTidak = 0;
             if (Array.isArray(data)) {
                 data.forEach(r => {
-                    let pengguna = (r.pengguna || "").trim();
+                    let pendaftar = (r.pendaftar || "").trim();
                     // Hilangkan spasi untuk memudahkan pengambilan karakter ke 3-7 (indeks 2-6)
-                    let penggunaTanpaSpasi = pengguna.replace(/\s+/g, "").toUpperCase();
+                    let pendaftarTanpaSpasi = pendaftar.replace(/\s+/g, "").toUpperCase();
                     
-                    if (penggunaTanpaSpasi.length >= 7) {
+                    if (pendaftarTanpaSpasi.length >= 7) {
                         // Karakter ke-3 s.d. 7 (contoh: RWIA401WAC01 -> IA401)
-                        const kodeKelas = penggunaTanpaSpasi.substring(2, 7);
+                        const kodeKelas = pendaftarTanpaSpasi.substring(2, 7);
                         rekapMap[kodeKelas] = (rekapMap[kodeKelas] || 0) + 1;
                         totalSemua++;
-                    } else if (penggunaTanpaSpasi.length > 0) {
+                    } else if (pendaftarTanpaSpasi.length > 0) {
                         rekapMap["LAINNYA"] = (rekapMap["LAINNYA"] || 0) + 1;
                         totalSemua++;
                     }
@@ -321,7 +321,7 @@
             } else {
                 data.forEach(r => {
                     const timestamp = aman(r.waktuInput || "-");
-                    const pengguna = aman(r.pengguna || "");
+                    const pendaftar = aman(r.pendaftar || "");
                     const konfirmasi = aman(r.konfirmasi || "");
                     const keterangan = aman(r.keterangan || "");
                     let tampilStatus = (r.konfirmasi || "").toUpperCase().trim() === "TIDAK" && keterangan ? `${konfirmasi} (${keterangan})` : konfirmasi;
@@ -329,7 +329,7 @@
                     html += `
                         <tr>
                             <td class="waktu-col">${timestamp}</td>
-                            <td>${pengguna}</td>
+                            <td>${pendaftar}</td>
                             <td>${tampilStatus}</td>
                         </tr>
                     `;
@@ -341,7 +341,7 @@
         function filterData() {
             const keyword = document.getElementById("cari").value.toLowerCase();
             const hasil = semuaData.filter(r => 
-                (r.pengguna || "").toLowerCase().includes(keyword) ||
+                (r.pendaftar || "").toLowerCase().includes(keyword) ||
                 (r.konfirmasi || "").toLowerCase().includes(keyword) ||
                 (r.keterangan || "").toLowerCase().includes(keyword) ||
                 (r.waktuInput || "").toLowerCase().includes(keyword)
@@ -351,19 +351,19 @@
         }
 
         async function simpan() {
-            const inputEl = document.getElementById("pengguna");
-            const pengguna = bersihkanPengguna(inputEl.value);
-            inputEl.value = pengguna;
+            const inputEl = document.getElementById("pendaftar");
+            const pendaftar = bersihkanpendaftar(inputEl.value);
+            inputEl.value = pendaftar;
 
-            if (!/^[A-Z]{2}\s[A-Z]{2}[0-9]{3}\s[A-Z]{3}[0-9]{2}$/.test(pengguna)) {
-                errorInput("pengguna", "Format pendaftar salah! Contoh: RW IA401 WAC01");
+            if (!/^[A-Z]{2}\s[A-Z]{2}[0-9]{3}\s[A-Z]{3}[0-9]{2}$/.test(pendaftar)) {
+                errorInput("pendaftar", "Format pendaftar salah! Contoh: RW IA401 WAC01");
                 return;
             }
 
-            const penggunaClean = pengguna.trim().toUpperCase();
-            if (semuaData.some(item => (item.pengguna || "").trim().toUpperCase() === penggunaClean)) {
-                simpanKeMemoryLokal(penggunaClean);
-                errorInput("pengguna", "Data yang diinput telah ada");
+            const pendaftarClean = pendaftar.trim().toUpperCase();
+            if (semuaData.some(item => (item.pendaftar || "").trim().toUpperCase() === pendaftarClean)) {
+                simpanKeMemoryLokal(pendaftarClean);
+                errorInput("pendaftar", "Data yang diinput telah ada");
                 return;
             }
 
@@ -382,7 +382,7 @@
 
             if (bawaPasangan === "YA") {
                 const idPasanganEl = document.getElementById("idPasangan");
-                idPasangan = bersihkanPengguna(idPasanganEl.value);
+                idPasangan = bersihkanpendaftar(idPasanganEl.value);
                 idPasanganEl.value = idPasangan;
 
                 if (!/^[A-Z]{2}\s[A-Z]{2}[0-9]{3}\s[A-Z]{3}[0-9]{2}$/.test(idPasangan)) {
@@ -403,7 +403,7 @@
             try {
                 const params = new URLSearchParams({ 
                     action: "simpan", 
-                    pengguna, 
+                    pendaftar, 
                     konfirmasi, 
                     keterangan, 
                     bawaPasangan,
@@ -415,7 +415,7 @@
                 const hasil = await response.json();
 
                 if (hasil.success) {
-                    simpanKeMemoryLokal(penggunaClean);
+                    simpanKeMemoryLokal(pendaftarClean);
                     snackbar("Data berhasil disimpan");
                     document.getElementById("keterangan").value = "";
                     document.getElementById("ya").checked = true;
