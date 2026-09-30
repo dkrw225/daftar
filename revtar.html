@@ -236,7 +236,7 @@
 
                 // Mapping urutan kolom sesuai GS tanpa Keterangan:
                 // 0: Pendaftar, 1: Konfirmasi, 2: Waktu Input, 3: Bawa Pasangan, 4: ID Pasangan, 5: Sekamar Pasangan
-                semuaData = json.table.rows.map(row => {
+                semuaData = json.table.rows.slice(1).map(row => {
                     const cells = row.c || [];
                     return {
                         pendaftar: ambilCell(cells, 0),
