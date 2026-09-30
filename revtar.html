@@ -8,7 +8,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: Roboto, Arial, sans-serif; background: #f1f5f9; color: #1e293b; min-height: 100vh; }
         .header { position: sticky; top: 0; z-index: 20; background: #1565c0; color: white; padding: 16px; text-align: center; font-size: 22px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
-        .container { max-width: 650px; margin: auto; padding: 12px; }
+        .container { max-width: 800px; margin: auto; padding: 12px; }
         .card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 3px 10px rgba(0,0,0,.08); }
         label { display: block; margin-bottom: 5px; font-size: 14px; color: #475569; font-weight: bold; }
         .sub-label { display: block; font-size: 12px; color: #64748b; margin-top: -3px; margin-bottom: 10px; font-weight: normal; }
@@ -30,13 +30,13 @@
         .rekap-ya { color: #16a34a; }
         .rekap-tidak { color: #dc2626; }
         .search { margin-bottom: 10px; }
-        .table-wrap { overflow: auto; max-height: 400px; border-radius: 10px; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .table-wrap { overflow: auto; max-height: 450px; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
         thead { position: sticky; top: 0; z-index: 5; }
         th { background: #1565c0; color: white; padding: 10px; text-align: left; }
         td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
         tr:nth-child(even) { background: #f8fafc; }
-        .waktu-col { font-size: 12px; color: #64748b; white-space: nowrap; }
+        .waktu-col { font-size: 12px; color: #64748b; }
         .loading { display: none; text-align: center; padding: 15px; }
         .spinner { width: 30px; height: 30px; border-radius: 50%; border: 4px solid #ddd; border-top-color: #1565c0; animation: spin 1s linear infinite; margin: auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -128,7 +128,7 @@
                 <div class="rekap-content" id="rekapContent"></div>
             </div>
 
-            <input class="search" id="cari" type="text" placeholder="🔍 Cari pendaftar atau konfirmasi" oninput="filterData()">
+            <input class="search" id="cari" type="text" placeholder="🔍 Cari pendaftar, konfirmasi, atau pasangan" oninput="filterData()">
 
             <div class="loading" id="loading">
                 <div class="spinner"></div>
@@ -142,6 +142,9 @@
                             <th>Waktu Input</th>
                             <th>Pendaftar</th>
                             <th>Konfirmasi</th>
+                            <th>Bawa Pasangan</th>
+                            <th>ID Pasangan</th>
+                            <th>Sekamar</th>
                         </tr>
                     </thead>
                     <tbody id="tabelData"></tbody>
@@ -231,12 +234,17 @@
 
                 if (!json.table || !json.table.rows) throw new Error("Format data Google Sheet tidak valid");
 
+                // Mapping urutan kolom sesuai GS tanpa Keterangan:
+                // 0: Pendaftar, 1: Konfirmasi, 2: Waktu Input, 3: Bawa Pasangan, 4: ID Pasangan, 5: Sekamar Pasangan
                 semuaData = json.table.rows.map(row => {
                     const cells = row.c || [];
                     return {
                         pendaftar: ambilCell(cells, 0),
                         konfirmasi: ambilCell(cells, 1),
-                        waktuInput: ambilWaktu(cells, 2)
+                        waktuInput: ambilWaktu(cells, 2),
+                        bawaPasangan: ambilCell(cells, 3),
+                        idPasangan: ambilCell(cells, 4),
+                        sekamarPasangan: ambilCell(cells, 5)
                     };
                 }).filter(r => r.pendaftar || r.konfirmasi || r.waktuInput);
 
@@ -302,18 +310,24 @@
         function tampilTabel(data) {
             let html = "";
             if (!Array.isArray(data) || data.length === 0) {
-                html = `<tr><td colspan="3" style="text-align:center">Tidak ada data</td></tr>`;
+                html = `<tr><td colspan="6" style="text-align:center">Tidak ada data</td></tr>`;
             } else {
                 data.forEach(r => {
                     const timestamp = aman(r.waktuInput || "-");
-                    const pendaftar = aman(r.pendaftar || "");
-                    const konfirmasi = aman(r.konfirmasi || "");
+                    const pendaftar = aman(r.pendaftar || "-");
+                    const konfirmasi = aman(r.konfirmasi || "-");
+                    const bawaPasangan = aman(r.bawaPasangan || "-");
+                    const idPasangan = aman(r.idPasangan || "-");
+                    const sekamarPasangan = aman(r.sekamarPasangan || "-");
 
                     html += `
                         <tr>
                             <td class="waktu-col">${timestamp}</td>
                             <td>${pendaftar}</td>
                             <td>${konfirmasi}</td>
+                            <td>${bawaPasangan}</td>
+                            <td>${idPasangan}</td>
+                            <td>${sekamarPasangan}</td>
                         </tr>
                     `;
                 });
@@ -326,7 +340,10 @@
             const hasil = semuaData.filter(r => 
                 (r.pendaftar || "").toLowerCase().includes(keyword) ||
                 (r.konfirmasi || "").toLowerCase().includes(keyword) ||
-                (r.waktuInput || "").toLowerCase().includes(keyword)
+                (r.waktuInput || "").toLowerCase().includes(keyword) ||
+                (r.bawaPasangan || "").toLowerCase().includes(keyword) ||
+                (r.idPasangan || "").toLowerCase().includes(keyword) ||
+                (r.sekamarPasangan || "").toLowerCase().includes(keyword)
             );
             tampilTabel(hasil);
             tampilRekap(hasil);
