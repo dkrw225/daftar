@@ -77,18 +77,13 @@
             <label>Konfirmasi Kedatangan</label>
             <div class="radio-group">
                 <div class="radio-btn">
-                    <input type="radio" id="ya" name="konfirmasi" value="YA" checked onchange="toggleKeterangan()">
+                    <input type="radio" id="ya" name="konfirmasi" value="YA" checked>
                     <label class="radio-label" for="ya">YA</label>
                 </div>
                 <div class="radio-btn">
-                    <input type="radio" id="tidak" name="konfirmasi" value="TIDAK" onchange="toggleKeterangan()">
+                    <input type="radio" id="tidak" name="konfirmasi" value="TIDAK">
                     <label class="radio-label" for="tidak">TIDAK</label>
                 </div>
-            </div>
-
-            <div id="boxKeterangan" style="display:none;">
-                <label for="keterangan">Keterangan bila TIDAK</label>
-                <input id="keterangan" type="text" placeholder="Alasan tidak hadir">
             </div>
 
             <!-- Pertanyaan Pasangan -->
@@ -214,12 +209,6 @@
             return match ? `${match[1]} ${match[2]} ${match[3]}` : inputRaw.toUpperCase();
         }
 
-        function toggleKeterangan() {
-            const tidak = document.getElementById("tidak").checked;
-            document.getElementById("boxKeterangan").style.display = tidak ? "block" : "none";
-            if (!tidak) document.getElementById("keterangan").value = "";
-        }
-
         function togglePasangan() {
             const ya = document.getElementById("pasanganYa").checked;
             document.getElementById("boxPasangan").style.display = ya ? "block" : "none";
@@ -247,10 +236,9 @@
                     return {
                         pendaftar: ambilCell(cells, 0),
                         konfirmasi: ambilCell(cells, 1),
-                        keterangan: ambilCell(cells, 2),
-                        waktuInput: ambilWaktu(cells, 3)
+                        waktuInput: ambilWaktu(cells, 2)
                     };
-                }).filter(r => r.pendaftar || r.konfirmasi || r.keterangan || r.waktuInput);
+                }).filter(r => r.pendaftar || r.konfirmasi || r.waktuInput);
 
                 semuaData.reverse();
                 tampilTabel(semuaData);
@@ -276,17 +264,14 @@
             return cells[index].f ? String(cells[index].f) : cells[index].v ? String(cells[index].v) : "";
         }
 
-        // Rekap pendaftar berdasarkan KELAS (karakter ke-3 s.d. 7 ID Pendaftar)
         function tampilRekap(data) {
             let rekapMap = {}, totalSemua = 0, totalYa = 0, totalTidak = 0;
             if (Array.isArray(data)) {
                 data.forEach(r => {
                     let pendaftar = (r.pendaftar || "").trim();
-                    // Hilangkan spasi untuk memudahkan pengambilan karakter ke 3-7 (indeks 2-6)
                     let pendaftarTanpaSpasi = pendaftar.replace(/\s+/g, "").toUpperCase();
                     
                     if (pendaftarTanpaSpasi.length >= 7) {
-                        // Karakter ke-3 s.d. 7 (contoh: RWIA401WAC01 -> IA401)
                         const kodeKelas = pendaftarTanpaSpasi.substring(2, 7);
                         rekapMap[kodeKelas] = (rekapMap[kodeKelas] || 0) + 1;
                         totalSemua++;
@@ -323,14 +308,12 @@
                     const timestamp = aman(r.waktuInput || "-");
                     const pendaftar = aman(r.pendaftar || "");
                     const konfirmasi = aman(r.konfirmasi || "");
-                    const keterangan = aman(r.keterangan || "");
-                    let tampilStatus = (r.konfirmasi || "").toUpperCase().trim() === "TIDAK" && keterangan ? `${konfirmasi} (${keterangan})` : konfirmasi;
 
                     html += `
                         <tr>
                             <td class="waktu-col">${timestamp}</td>
                             <td>${pendaftar}</td>
-                            <td>${tampilStatus}</td>
+                            <td>${konfirmasi}</td>
                         </tr>
                     `;
                 });
@@ -343,7 +326,6 @@
             const hasil = semuaData.filter(r => 
                 (r.pendaftar || "").toLowerCase().includes(keyword) ||
                 (r.konfirmasi || "").toLowerCase().includes(keyword) ||
-                (r.keterangan || "").toLowerCase().includes(keyword) ||
                 (r.waktuInput || "").toLowerCase().includes(keyword)
             );
             tampilTabel(hasil);
@@ -368,14 +350,7 @@
             }
 
             const konfirmasi = document.querySelector('input[name="konfirmasi"]:checked').value;
-            const keterangan = document.getElementById("keterangan").value.trim();
 
-            if (konfirmasi === "TIDAK" && keterangan === "") {
-                errorInput("keterangan", "Isi keterangan jika memilih TIDAK");
-                return;
-            }
-
-            // Data Pasangan
             const bawaPasangan = document.querySelector('input[name="bawaPasangan"]:checked').value;
             let idPasangan = "";
             let sekamarPasangan = "";
@@ -405,22 +380,25 @@
                     action: "simpan", 
                     pendaftar, 
                     konfirmasi, 
-                    keterangan, 
                     bawaPasangan,
                     idPasangan,
                     sekamarPasangan,
                     timestamp 
                 });
-                const response = await fetch(`${API}?${params.toString()}`);
+
+                const response = await fetch(`${API}?${params.toString()}`, {
+                    method: "GET",
+                    redirect: "follow"
+                });
                 const hasil = await response.json();
 
                 if (hasil.success) {
                     simpanKeMemoryLokal(pendaftarClean);
                     snackbar("Data berhasil disimpan");
-                    document.getElementById("keterangan").value = "";
+                    document.getElementById("pendaftar").value = "";
+                    document.getElementById("idPasangan").value = "";
                     document.getElementById("ya").checked = true;
                     document.getElementById("pasanganTidak").checked = true;
-                    toggleKeterangan();
                     togglePasangan();
                     setTimeout(() => loadData(), 800);
                 } else {
