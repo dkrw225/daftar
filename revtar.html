@@ -67,7 +67,13 @@
     <div class="header">Pendaftaran Acara Revitalisasi Tarbiyah<br>Panjang Jiwo, 31 Oktober - 1 November</div>
 
     <div class="container">
-        <div class="card">
+        <!-- Tombol Bar Input Pendaftaran -->
+        <div id="barInputPendaftaran" class="card" style="text-align: center; padding: 12px;">
+            <button onclick="tampilkanFormPendaftaran()" style="background: #16a34a;">+ Input Pendaftaran</button>
+        </div>
+
+        <!-- Card Form Pendaftaran (Awalnya Disembunyikan) -->
+        <div class="card" id="cardFormPendaftaran" style="display: none;">
             <label for="pendaftar">Pendaftar - ID_Sektor ID_Kelas ID_Anggota</label>
             <span class="sub-label">Contoh: RW IA401 IDA01</span>
             
@@ -164,6 +170,16 @@
         const LOCAL_STORAGE_KEY = "pendaftar_tersimpan_local";
         let semuaData = [];
 
+        function tampilkanFormPendaftaran() {
+            document.getElementById("barInputPendaftaran").style.display = "none";
+            document.getElementById("cardFormPendaftaran").style.display = "block";
+        }
+
+        function sembunyikanFormPendaftaran() {
+            document.getElementById("barInputPendaftaran").style.display = "block";
+            document.getElementById("cardFormPendaftaran").style.display = "none";
+        }
+
         function ambilMemoryLokal() {
             try {
                 const data = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -235,8 +251,6 @@
 
                 if (!json.table || !json.table.rows) throw new Error("Format data Google Sheet tidak valid");
 
-                // Mapping urutan kolom sesuai GS tanpa Keterangan:
-                // 0: Pendaftar, 1: Konfirmasi, 2: Waktu Input, 3: Bawa Pasangan, 4: ID Pasangan, 5: Sekamar Pasangan
                 semuaData = json.table.rows.slice(1).map(row => {
                     const cells = row.c || [];
                     return {
@@ -265,7 +279,7 @@
         function ambilCell(cells, index) {
             if (!cells[index]) return "";
             return cells[index].f !== undefined && cells[index].f !== null ? String(cells[index].f) :
-                   cells[index].v !== undefined && cells[index].v !== null ? String(cells[index].v) : "";
+                     cells[index].v !== undefined && cells[index].v !== null ? String(cells[index].v) : "";
         }
 
         function ambilWaktu(cells, index) {
@@ -274,33 +288,57 @@
         }
 
         function tampilRekap(data) {
-            let rekapMap = {}, totalSemua = 0, totalYa = 0, totalTidak = 0;
+            let totalSemua = 0, totalIkhwan = 0, totalAkhwat = 0, totalYa = 0, totalTidak = 0;
+
             if (Array.isArray(data)) {
                 data.forEach(r => {
                     let pendaftar = (r.pendaftar || "").trim();
                     let pendaftarTanpaSpasi = pendaftar.replace(/\s+/g, "").toUpperCase();
-                    
-                    if (pendaftarTanpaSpasi.length >= 7) {
-                        const kodeKelas = pendaftarTanpaSpasi.substring(2, 7);
-                        rekapMap[kodeKelas] = (rekapMap[kodeKelas] || 0) + 1;
-                        totalSemua++;
-                    } else if (pendaftarTanpaSpasi.length > 0) {
-                        rekapMap["LAINNYA"] = (rekapMap["LAINNYA"] || 0) + 1;
-                        totalSemua++;
-                    }
+                    let statusKonfirmasi = (r.konfirmasi || "").trim().toUpperCase();
+                    let bawaPasangan = (r.bawaPasangan || "").trim().toUpperCase();
 
-                    const status = (r.konfirmasi || "").trim().toUpperCase();
-                    if (status === "YA") totalYa++;
-                    else if (status === "TIDAK") totalTidak++;
+                    if (pendaftarTanpaSpasi.length >= 3) {
+                        totalSemua++;
+
+                        // Tentukan gender pendaftar utama dari karakter ke-3 (index 2)
+                        let charGender = pendaftarTanpaSpasi.charAt(2);
+                        let isPendaftarIkhwan = (charGender === 'I');
+                        let isPendaftarAkhwat = (charGender === 'A');
+
+                        if (isPendaftarIkhwan) {
+                            totalIkhwan++;
+                        } else if (isPendaftarAkhwat) {
+                            totalAkhwat++;
+                        }
+
+                        // Cek Pasangan
+                        let adaPasangan = (bawaPasangan === "YA");
+                        if (adaPasangan) {
+                            totalSemua++; // Pasangan dihitung sebagai peserta tambahan
+                            // Pasangan berlawanan gender dengan pendaftar utama
+                            if (isPendaftarIkhwan) {
+                                totalAkhwat++; // Pasangan dari ikhwan adalah akhwat
+                            } else if (isPendaftarAkhwat) {
+                                totalIkhwan++; // Pasangan dari akhwat adalah ikhwan
+                            }
+                        }
+
+                        // Hitung Ya dan Tidak
+                        if (statusKonfirmasi === "YA") {
+                            totalYa++; // Pendaftar utama YA
+                            if (adaPasangan) {
+                                totalYa++; // Pasangan ikut dihitung YA
+                            }
+                        } else if (statusKonfirmasi === "TIDAK") {
+                            totalTidak++;
+                        }
+                    }
                 });
             }
 
-            let html = Object.keys(rekapMap).sort().map(kelas => {
-                const jumlah = rekapMap[kelas];
-                return `<span class="rekap-item">[${kelas} = ${jumlah}]</span> `;
-            }).join("");
-
-            html += `
+            let html = `
+                <span class="rekap-item">[Ikhwan = ${totalIkhwan}]</span>
+                <span class="rekap-item">[Akhwat = ${totalAkhwat}]</span>
                 <span class="rekap-total">[Total = ${totalSemua}]</span>
                 <span class="rekap-total rekap-ya">[YA = ${totalYa}]</span>
                 <span class="rekap-total rekap-tidak">[TIDAK = ${totalTidak}]</span>
@@ -377,17 +415,12 @@
                 const idPasanganEl = document.getElementById("idPasangan");
                 idPasangan = bersihkanpendaftar(idPasanganEl.value);
                 idPasanganEl.value = idPasangan;
-
-//                if (!/^[A-Z]{2}\s[A-Z]{2}[0-9]{3}\s[A-Z]{3}[0-9]{2}$/.test(idPasangan)) {
-//                    errorInput("idPasangan", "Format ID Pasangan salah! Contoh: RW IA401 WAC02");
-//                    return;
-//                }
                 sekamarPasangan = document.querySelector('input[name="sekamarPasangan"]:checked').value;
             }
 
             const sekarang = new Date();
             const timestamp = sekarang.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" }) + " " +
-                              sekarang.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+                            sekarang.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 
             const tombol = document.getElementById("btnSimpan");
             tombol.disabled = true;
@@ -418,6 +451,7 @@
                     document.getElementById("ya").checked = true;
                     document.getElementById("pasanganTidak").checked = true;
                     togglePasangan();
+                    sembunyikanFormPendaftaran();
                     setTimeout(() => loadData(), 800);
                 } else {
                     snackbar(hasil.message || "Gagal menyimpan");
